@@ -7,7 +7,7 @@ Hardware: -4 wheel robot --> 4 DC Motors (controlled using Adafruit Arduino Moto
 
 TODO: -Implement Adafruit motor shield servo code
       -Test rangefinder on rover
-      -Calibrate "degPerSecond" constant for a given rover speed
+      -Calibrate "DEG_PER_SECOND" constant for a given rover speed
       -Integrate Xbee communications
 */
 
@@ -32,12 +32,16 @@ Adafruit_DCMotor *brMotor = AFMS.getMotor(4);
 Servo rangeServo;
 
 //Ultrasonic rangefinder
-const int RANGE_SIG = 4;
-const int RANGE_TRIG = 5;
+const int RANGE_SIG_PIN = 4;
+const int RANGE_TRIG_PIN = 5;
+const int SERVO_CONTROL_PIN = 9;
 const int NUM_AVG = 5; //determines how many readings are taken at each angle of servo
 const int NUM_READINGS = 13; //
 const int NUM_ANGLES = NUM_READINGS - 1;  //One reading at zero, one reading at 180
                                           //NUM_ANGLES must divide 180 evenly
+//TODO: play with "degPerSecond"
+const float DEG_PER_SECOND = 360.0; //This constant denotes how many degrees per second the robot can turn
+                                   //given a certain wheel speed. Empirically determined.                                  
 float distance[NUM_READINGS];
 
 //Robot control constants and variables
@@ -54,7 +58,7 @@ void roverForward();
 void setup() 
 {
   //Initialize servo object to pin 9 (may not be required with Adafruit motor shield)
-  rangeServo.attach(9);
+  rangeServo.attach(SERVO_CONTROL_PIN);
   
   //Connect to motor controller
   AFMS.begin();
@@ -77,14 +81,14 @@ void setup()
 
 void loop() 
 {
-  //steerRover(scanPath());
+  steerRover(scanPath());
   
   //testing if rover will steer using "steerRover" function
-  steerRover(45); //At 75 deg rover executes a slight left hand turn
+  //steerRover(45); //At 75 deg rover executes a slight left hand turn
                   //left wheels spin visibly slower than right wheels
-  delay(3000);
+  delay(1000);
   roverForward(); //"roverForward" function working
-  delay(3000);
+  delay(1000);
 
 }
 
@@ -106,9 +110,9 @@ int scanPath()
     for(int j = 0; j < NUM_AVG; j++)
     {
       //Send trigger signal to rangefinder
-      sendTrigger(RANGE_TRIG, 5);
+      sendTrigger(RANGE_TRIG_PIN, 5);
       //Detect reflected pulse and time of flight
-      duration = pulseIn(RANGE_SIG, HIGH, 30000); //30,000 microseconds, limit range to ~500cm
+      duration = pulseIn(RANGE_SIG_PIN, HIGH, 30000); //30,000 microseconds, limit range to ~500cm
       //Calculate distance travelled by pulse-echo wave
       tempDist[j] = (duration / 29.1545) / 2.0; //divide by two due to pulse-echo (assumed v=343 m/s)
       delay(30);
@@ -126,11 +130,9 @@ int scanPath()
 //Function for steering/orienting the rover towards the clearest path
 void steerRover(int pathAngle)
 {
-  //TODO: play with "degPerSecond"
-  const float degPerSecond = 45.0; //This constant denotes how many degrees per second the robot can turn
-                                   //given a certain wheel speed. Empirically determined.
 
-  float timeActive = (abs(90-pathAngle))/degPerSecond; //calculate how long the motors should be on to 
+
+  float timeActive = (abs(90-pathAngle))/DEG_PER_SECOND; //calculate how long the motors should be on to 
                                                        //deviate a certain angle from straight (90 deg)
   timeActive = timeActive*1000.0; //convert to milliseconds
   

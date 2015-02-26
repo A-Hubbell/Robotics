@@ -53,9 +53,9 @@ int scanPath()
       //Send trigger signal to rangefinder
       digitalWrite(RANGE_TRIG, LOW);//write low first to ensure clean high pulse
       delay(2);
-      digitalWrite(RANGE_TRIG, HIGH);
-      delay(5);
-      digitalWrite(RANGE_TRIG, LOW);
+      digitalWrite(RANGE_TRIG, HIGH);//write high to trigger the rangefinder sonic pulse
+      delay(5);  //TODO: check spatial resolution of rangefinder with this pulse length
+      digitalWrite(RANGE_TRIG, LOW);//write low to end the rangefinder sonic pulse
       
       duration = pulseIn(RANGE_SIG, HIGH, 30000); //30,000 microseconds, limit range to ~500cm
       temp[j] = (duration / 29.1545) / 2.0; //divide by two due to pulse-echo (assumed v=343 m/s)
